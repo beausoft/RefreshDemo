@@ -1,10 +1,11 @@
 <!--components/RefreshLayout/refresh-layout.wxml-->
-<view style='height:{{dynamicHeight}}rpx;background-color:{{backgroundColor}}' class="refresh-container">
+<wxs module="script" src="./refresh-view.wxs"></wxs>
+<view style='height:0rpx;background-color:{{backgroundColor}}' class="refresh-container">
   <view class='refresh-layout' style='line-height:{{refreshHeight}}rpx;height:{{refreshHeight}}rpx;'>
     <view class="refresh-loading" hidden="{{0!=pullState}}"></view>
-    <text class="refresh-tips">{{pullState==1?'下拉刷新...':pullState==0?'正在刷新...':'松开刷新...'}}</text>
+    <text class="refresh-tips">{{pullState===1?'下拉刷新...':pullState===0?'正在刷新...':'松开刷新...'}}</text>
   </view>
 </view>
-<view bindtouchstart='handletouchstart' bindtouchmove='handletouchmove' bindtouchend='handletouchend' bindtouchcancel='handletouchcancel'>
+<view style="{{viewStyle}}" class="refresh-view" bindtouchstart='{{script.handletouchstart}}' bindtouchmove='{{script.handletouchmove}}' bindtouchend='{{script.handletouchend}}' bindtouchcancel='{{script.handletouchcancel}}' change:refreshHeight="{{script.refreshHeightObserver}}" refreshHeight="{{refreshHeight}}" change:scale="{{script.scaleObserver}}" scale="{{scaleValue}}" change:state="{{script.stateObserver}}" state="{{pullState}}">
   <slot></slot>
 </view>

@@ -1,0 +1,101 @@
+var lastY = 0
+var PULL_DEFAULT = -1 //默认
+var PULL_LT_HEIGHT = 1 //下拉小于高度
+var PULL_GT_HEIGHT = 2 //下拉大于高度
+var PULL_REFRESHING = 0 //刷新中
+
+var EVENT_PULL_STATE = "onPullState";
+var EVENT_REFRESH = "onRefresh";
+
+var _pullState = PULL_DEFAULT; // 刷新状态 -1:默认  1:开始下拉  2: 达到下拉最大距离  0: 正在刷新 
+var _dynamicHeight = 0; //刷新布局动态高度
+var _refreshHeight = 150; //触发刷新的最小高度
+var _scrollTop = 0;
+var _scale = 1;
+
+var _triggerEvent = function (eventName, instance) {
+  if (eventName === EVENT_PULL_STATE) {
+    instance.callMethod("callPullState", { state: _pullState});
+  } else if (eventName === EVENT_REFRESH) {
+    instance.callMethod("callRefresh");
+  }
+}
+
+var _pullStateChange = function (state, dynamicHeight, instance) {
+  instance.selectComponent('.refresh-container').setStyle({
+    height: dynamicHeight + "rpx"
+  });
+  _pullState = state;
+  _dynamicHeight = dynamicHeight;
+  _triggerEvent(EVENT_PULL_STATE, instance);
+}
+
+var handletouchstart = function (event, ownerInstance) {
+  lastY = event.touches[0].clientY;
+}
+
+var handletouchmove = function (event, ownerInstance) {
+  var clientY = event.touches[0].clientY;
+  var offsetY = clientY - lastY;
+  if (offsetY < 0) return;
+  var dynamicHeight = _dynamicHeight + offsetY;
+  if (dynamicHeight > _refreshHeight) {
+    _pullStateChange((0 == _pullState) ? 0 : PULL_GT_HEIGHT, dynamicHeight, ownerInstance);
+  } else {
+    dynamicHeight = dynamicHeight < 0 ? 0 : dynamicHeight; //如果动态高度小于0处理
+    _pullStateChange((0 == _pullState) ? 0 : PULL_LT_HEIGHT, dynamicHeight, ownerInstance);
+  }
+  lastY = event.touches[0].clientY;
+}
+
+var handletouchend = function (event, ownerInstance) {
+  var refreshHeight = _refreshHeight;
+  if (0 == _pullState) {
+    _pullStateChange(PULL_REFRESHING, refreshHeight, ownerInstance);
+    return
+  }
+  var dynamicHeight = _dynamicHeight;
+  if (_scrollTop > 0 && PULL_DEFAULT != _pullState) {
+    if (dynamicHeight - _scale * _scrollTop > refreshHeight) {
+      _pullStateChange(PULL_REFRESHING, refreshHeight, ownerInstance);
+      //刷新事件 回调出去
+      _triggerEvent(EVENT_REFRESH, ownerInstance);
+    } else {
+      _pullStateChange(PULL_DEFAULT, 0, ownerInstance);
+    }
+    return
+  }
+  if (dynamicHeight >= _refreshHeight) {
+    _pullStateChange(PULL_REFRESHING, refreshHeight, ownerInstance);
+    //刷新事件 回调出去
+    _triggerEvent(EVENT_REFRESH, ownerInstance);
+  } else {
+    _pullStateChange(PULL_DEFAULT, 0, ownerInstance);
+  }
+}
+
+var handletouchcancel = function (event, ownerInstance) {
+  _pullStateChange(PULL_DEFAULT, 0, ownerInstance)
+}
+
+module.exports = {
+  handletouchstart: handletouchstart,
+  handletouchmove: handletouchmove,
+  handletouchend: handletouchend,
+  handletouchcancel: handletouchcancel,
+  scaleObserver: function (newValue, oldValue, ownerInstance, instance) {
+    if(newValue) {
+      _scale = newValue;
+    }
+  },
+  refreshHeightObserver: function (newValue, oldValue, ownerInstance, instance) {
+    if (newValue) {
+      _refreshHeight = newValue;
+    }
+  },
+  stateObserver: function (newValue, oldValue, ownerInstance, instance) {
+    if (newValue === PULL_DEFAULT && newValue !== _pullState) {
+      _pullStateChange(PULL_DEFAULT, 0, ownerInstance);
+    }
+  }
+}
