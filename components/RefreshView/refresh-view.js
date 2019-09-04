@@ -75,7 +75,7 @@ Component({
       }
     },
     callRefresh() {
-      this.triggerEvent("onRefresh");
+      this.triggerEvent("onRefresh", this);
     }
   }
 })

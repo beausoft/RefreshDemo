@@ -18,7 +18,7 @@ Page({
   },
   onLoad: function() {
     // 刷新组件
-    this.refreshView = this.selectComponent("#refreshView")
+    // this.refreshView = this.selectComponent("#refreshView")
     // wx.navigateTo({
     //   url: path,
     // })
@@ -70,7 +70,7 @@ Page({
       url: path,
     })
   },
-  onPullDownRefresh:function(){
-    setTimeout(() => { this.refreshView.stopPullRefresh()},5000)
+  onPullDownRefresh:function(event){
+    setTimeout(() => { event.detail.stopPullRefresh()},5000)
   }
 })
